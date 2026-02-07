@@ -67,9 +67,9 @@ class ValueIterationAgent():
             # loop over the actions we can take from the given state (state_index)
             for action_index in range(n_actions):
                 # Get the list of possible next states with their corresponding transition probability and rewards in the form of a tuples (transition probability, next state, reward)
-                ...
+                transitions = self.env.p(state_index, action_index)
                 # Compute the action values for action_index
-                ...
+                A[action_index] = sum([prob * (reward + self.gamma * V[next_state]) for prob, next_state, reward in transitions])
             return A
 
         #Initialization value function
@@ -84,13 +84,14 @@ class ValueIterationAgent():
             # Update each state
             for state_index in range(n_states):
                 # Do a one-step lookahead to find the best action 
-                ...
+                A = one_step_lookahead(state_index, V)
                 # choose the action that maximizes the state-value function
-                ...
+                new_value = np.max(A)
                 # Calculate delta across all states 
-                ...
+                delta = max(delta, abs(new_value - V[state_index]))
+                delta_array.append(delta)
                 # Update the value function: Bellman optimality eqn 
-                ...
+                V[state_index] = new_value
             # Check for convergence 
             if delta < self.convergence_threshold:
                 break
@@ -98,7 +99,7 @@ class ValueIterationAgent():
         # Create a deterministic policy using the optimal value function
         for state_index in range(n_states):
             # One step lookahead to find the best action for this state
-            ...
+            A = one_step_lookahead(state_index, V)
             # Always take the best action
-            ...
+            policy[state_index, np.argmax(A)] = 1.0
         return V, policy, delta_array
