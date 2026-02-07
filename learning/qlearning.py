@@ -38,20 +38,23 @@ class QLearningAgent():
             None
         """
         # The old Q value
-        ...
+        old_Q_value = self.Q_matrix[current_state, action]
         # The new Q value (learned value)
-        ...
+        new_Q_value = old_Q_value + self.learning_rate * (reward + self.gamma * np.max(self.Q_matrix[next_state]) - old_Q_value)
         # Update the Q-matrix of the current state and action pair
-        ...
+        self.Q_matrix[current_state, action] = new_Q_value
         
     def choose_action(self, state_index, epsilon):
         """
         Choose an action following Epsilon Greedy Policy.
         """
         if np.random.random() < epsilon:
-            ...
+            # Explore: choose a random action
+            action_index = self.environment.action_space.sample()
         else:
-            ...
+            # Exploit: choose the action with the highest Q-value for the current state
+            action_index = np.argmax(self.Q_matrix[state_index])
+        return action_index
     
     def train(self, n_episodes: int = 2000, n_time_steps: int = 5000, epsilon_decay: float = 0.999, epsilon_min: float = 0.01):
         """
@@ -83,13 +86,14 @@ class QLearningAgent():
             
             for time_step in range(n_time_steps):
                 # Get the State Index
-                ...
+                current_state_index = self.environment.state_space.get_state_index()
                 # Choose an action following Epsilon Greedy Policy
-                ...
+                action_index = self.choose_action(current_state_index, epsilon)
                 # Update State
-                ...
+                next_state_index, reward = self.environment.step(action_index)
                 # Update Q(s, a)
-                ...
+                self.update_Q_matrix(reward, current_state_index, next_state_index, action_index)
+                reward_episode.append(reward)
 
             avg_reward = np.mean(reward_episode)
             avg_rewards.append(avg_reward)
@@ -103,12 +107,12 @@ class QLearningAgent():
         
         # Extract policy
         for s in range(self.n_states):
-            best_action_index = ...
-            self.policy[s, best_action_index] = ...
+            best_action_index = np.argmax(self.Q_matrix[s])
+            self.policy[s, best_action_index] = 1.0
         print(f"[INFO] Policy : {self.policy}")
 
         plt.plot(avg_rewards)
-        plt.title("Convergence of Value Iteration Algorithm")
+        plt.title("Convergence of Q-Learning Algorithm")
         plt.xlabel("Iteration")
         plt.ylabel("Average Reward")
         plt.savefig("./figures/convergence_q_learning.png")
