@@ -43,11 +43,12 @@ class PolicyIterationAgent():
                     # Look at the possible next actions
                     for action_index, action_prob in enumerate(policy[state_index]):
                         # For each action, look at the possible next states and compute the value function
-                        ...
+                        transitions = self.env.p(state_index, action_index)
+                        v += action_prob * sum([prob * (reward + self.gamma * V[next_state]) for prob, next_state, reward in transitions])
                     # How much our value function changed (across any states)
-                    delta = ...
-                    ...
-                    V[state_index] = ...
+                    delta = max(delta, abs(v - V[state_index]))
+                    delta_array.append(delta)
+                    V[state_index] = v
                         
                 # Stop evaluating once our value function change is below a threshold",
                 if delta < self.convergence_threshold:
@@ -87,9 +88,9 @@ class PolicyIterationAgent():
             # loop over the actions we can take from the given state (state_index)
             for action_index in range(n_actions):
                 # Get the list of possible next states with their corresponding transition probability and rewards in the form of a tuples (transition probability, next state, reward)
-                ...
+                transitions = self.env.p(state_index, action_index)
                 # Compute the action values for action_index
-                ...
+                A[action_index] = sum([prob * (reward + self.gamma * V[next_state]) for prob, next_state, reward in transitions])
             return A
 
         # Start with a random policy
@@ -99,18 +100,23 @@ class PolicyIterationAgent():
         # While not optimal policy
         while True:
             # Evaluate the current policy
-            ...
+            V, temp = self.policy_evaluation(policy)
+            delta_array.extend(temp)
             # Will be set to false if we make any changes to the policy
             policy_stable = True
 
             # For each state, do the following
             for state_index in range(n_states):
                 # Compute the best action we would take under the current policy
-                ...
+                A = one_step_lookahead(state_index, V)
                 # Do a one-step lookahead to find the best action 
-                ...
+                best_action = np.argmax(A)
                 # Greedily update the policy
-                ...
+                new_policy = np.zeros(n_actions)
+                new_policy[best_action] = 1.0
+                if not np.array_equal(policy[state_index], new_policy):
+                    policy_stable = False
+                policy[state_index] = new_policy
             # If the policy is stable, then this is the optimal one
             if policy_stable:
                 return V, policy, delta_array
